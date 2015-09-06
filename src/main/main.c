@@ -526,7 +526,7 @@ void processLoopback(void) {
 
 int main(void) {
     init();
-
+	// init()
     while (1) {
         loop();
         processLoopback();
