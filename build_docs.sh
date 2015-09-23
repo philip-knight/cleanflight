@@ -1,8 +1,7 @@
 #!/bin/bash
 
 filename=Manual
-doc_files=(
-	'Introduction.md'
+doc_files=('Introduction.md'
 	'Getting Started.md'
 	'Safety.md'
 	'Installation.md'

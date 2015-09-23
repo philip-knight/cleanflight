@@ -15,7 +15,7 @@
 #
 
 # The target to build, see VALID_TARGETS below
-TARGET		?= NAZE
+TARGET		= NAZE
 
 # Compile-time options
 OPTIONS		?=
@@ -26,9 +26,6 @@ DEBUG ?=
 # Serial port/Device for flashing
 SERIAL_DEVICE	?= $(firstword $(wildcard /dev/ttyUSB*) no-port-found)
 
-# Flash size (KB).  Some low-end chips actually have more flash than advertised, use this to override.
-FLASH_SIZE ?=
-
 ###############################################################################
 # Things that need to be maintained as the source changes
 #
@@ -37,18 +34,12 @@ FORKNAME			 = cleanflight
 
 VALID_TARGETS	 = NAZE NAZE32PRO OLIMEXINO STM32F3DISCOVERY CHEBUZZF3 CC3D CJMCU EUSTM32F103RC SPRACINGF3 PORT103R SPARKY ALIENWIIF1 ALIENWIIF3 COLIBRI_RACE
 
-# Configure default flash sizes for the targets
-ifeq ($(FLASH_SIZE),)
-ifeq ($(TARGET),$(filter $(TARGET),NAZE))
 FLASH_SIZE = 128
-else
-$(error FLASH_SIZE not configured for target)
-endif
-endif
 
 REVISION = $(shell git log -1 --format="%h")
 
 # Working directories
+# $(dir <filenames>) return part of directory or './' without '/'.   Example:$(dir src/foo.c hacks) = src/ ./
 ROOT		 := $(patsubst %/,%,$(dir $(lastword $(MAKEFILE_LIST))))
 SRC_DIR		 = $(ROOT)/src/main
 OBJECT_DIR	 = $(ROOT)/obj/main
@@ -57,12 +48,14 @@ CMSIS_DIR	 = $(ROOT)/lib/main/CMSIS
 INCLUDE_DIRS	 = $(SRC_DIR)
 LINKER_DIR	 = $(ROOT)/src/main/target
 
+
 # Search path for sources
 VPATH		:= $(SRC_DIR):$(SRC_DIR)/startup
 USBFS_DIR	= $(ROOT)/lib/main/STM32_USB-FS-Device_Driver
+# $(notdir <filenames>) opposite to dir
 USBPERIPH_SRC = $(notdir $(wildcard $(USBFS_DIR)/src/*.c))
 
-
+CSOURCES        := $(shell find $(SRC_DIR) -name '*.c')
 
 STDPERIPH_DIR	 = $(ROOT)/lib/main/STM32F10x_StdPeriph_Driver
 
@@ -91,7 +84,6 @@ LD_SCRIPT	 = $(LINKER_DIR)/stm32_flash_f103_$(FLASH_SIZE)k.ld
 ARCH_FLAGS	 = -mthumb -mcpu=cortex-m3
 TARGET_FLAGS = -D$(TARGET) -pedantic
 DEVICE_FLAGS = -DSTM32F10X_MD -DSTM32F10X
-
 
 ifneq ($(FLASH_SIZE),)
 DEVICE_FLAGS := $(DEVICE_FLAGS) -DFLASH_SIZE=$(FLASH_SIZE)
@@ -207,7 +199,6 @@ NAZE_SRC	 = startup_stm32f10x_md_gcc.S \
 		   $(HIGHEND_SRC) \
 		   $(COMMON_SRC)
 
-
 # Search path and source files for the ST stdperiph library
 VPATH		:= $(VPATH):$(STDPERIPH_DIR)/src
 
@@ -232,7 +223,7 @@ OPTIMIZE	 = -Os
 LTO_FLAGS	 = -flto -fuse-linker-plugin $(OPTIMIZE)
 endif
 
-DEBUG_FLAGS	 = -ggdb3
+DEBUG_FLAGS	 = -ggdb3 -DDEBUG
 
 CFLAGS		 = $(ARCH_FLAGS) \
 		   $(LTO_FLAGS) \
@@ -273,6 +264,11 @@ LDFLAGS		 = -lm \
 ###############################################################################
 # No user-serviceable parts below
 ###############################################################################
+
+CPPCHECK         = cppcheck $(CSOURCES) --enable=all --platform=unix64 \
+		   --std=c99 --inline-suppr --quiet --force \
+		   $(addprefix -I,$(INCLUDE_DIRS)) \
+		   -I/usr/include -I/usr/include/linux
 
 #
 # Things we will build
@@ -343,6 +339,13 @@ unbrick_$(TARGET): $(TARGET_HEX)
 
 unbrick: unbrick_$(TARGET)
 
+## cppcheck    : run static analysis on C source code
+cppcheck: $(CSOURCES)
+	$(CPPCHECK)
+
+cppcheck-result.xml: $(CSOURCES)
+	$(CPPCHECK) --xml-version=2 2> cppcheck-result.xml
+
 help:
 	@echo ""
 	@echo "Makefile for the $(FORKNAME) firmware"
@@ -356,6 +359,10 @@ help:
 ## test        : run the cleanflight test suite
 test:
 	cd src/test && $(MAKE) test || true
+
+## show        : show values
+show:
+	@echo "$(VPATH)"
 
 # rebuild everything when makefile changes
 $(TARGET_OBJS) : Makefile
