@@ -83,6 +83,8 @@
 #include "common/printf.h"
 
 #include "serial_cli.h"
+//Mine
+#include "serial_msp.h"
 
 // FIXME remove this for targets that don't need a CLI.  Perhaps use a no-op macro when USE_CLI is not enabled
 // signal that we're in cli mode
@@ -2142,7 +2144,7 @@ void cliProcess(void)
     static bool MineFlag = true;
     if(MineFlag)
     {
-        cliPrint("Hello World!\r\n");
+        printf("Enter cliMode!\r\n");       
         MineFlag = false;
     }
     while (serialTotalBytesWaiting(cliPort)) {
@@ -2248,5 +2250,8 @@ void cliProcess(void)
 void cliInit(serialConfig_t *serialConfig)
 {
     UNUSED(serialConfig);
+    
+    setPrintfSerialPort(serialGetAvialablePort());
+
 }
 #endif

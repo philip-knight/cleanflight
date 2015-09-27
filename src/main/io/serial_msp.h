@@ -30,3 +30,6 @@ void sendMspTelemetry(void);
 void mspSetTelemetryPort(serialPort_t *mspTelemetryPort);
 void mspAllocateSerialPorts(serialConfig_t *serialConfig);
 void mspReleasePortIfAllocated(serialPort_t *serialPort);
+
+//Mine
+serialPort_t *serialGetAvialablePort(void);

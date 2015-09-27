@@ -29,6 +29,8 @@
 #include "common/axis.h"
 #include "common/color.h"
 #include "common/maths.h"
+//Mine
+#include "common/printf.h"
 
 #include "drivers/system.h"
 
@@ -738,12 +740,12 @@ static bool processOutCommand(uint8_t cmdMSP)
         }
         break;
 
-    case MSP_FC_VERSION:
-        headSerialReply(FLIGHT_CONTROLLER_VERSION_LENGTH);
+    case MSP_FC_VERSION://3
+        headSerialReply(FLIGHT_CONTROLLER_VERSION_LENGTH);//3
 
-        serialize8(FC_VERSION_MAJOR);
-        serialize8(FC_VERSION_MINOR);
-        serialize8(FC_VERSION_PATCH_LEVEL);
+        serialize8(FC_VERSION_MAJOR);//1
+        serialize8(FC_VERSION_MINOR);//10
+        serialize8(FC_VERSION_PATCH_LEVEL);//0
         break;
 
     case MSP_BOARD_INFO:
@@ -1806,6 +1808,7 @@ void mspProcess(void)
         while (serialTotalBytesWaiting(mspSerialPort)) {
 
             uint8_t c = serialRead(mspSerialPort);
+            
             bool consumed = mspProcessReceivedData(c);
 
             if (!consumed && !ARMING_FLAG(ARMED)) {
@@ -1897,4 +1900,30 @@ void sendMspTelemetry(void)
     if (sequenceIndex >= TELEMETRY_MSP_COMMAND_SEQUENCE_ENTRY_COUNT) {
         sequenceIndex = 0;
     }
+}
+
+//Mine
+serialPort_t *serialGetAvialablePort(void)
+{
+    uint8_t portIndex;
+    mspPort_t *candidatePort;
+
+    for (portIndex = 0; portIndex < MAX_MSP_PORT_COUNT; portIndex++) {
+        candidatePort = &mspPorts[portIndex];
+        if (candidatePort->mspPortUsage != FOR_GENERAL_MSP)
+            continue;
+        else
+            break;
+    }
+        return candidatePort->port;
+}
+
+void showCurrentPortInfo()
+{
+    printf("currentPort->c_state:%d\r\n",currentPort->c_state);
+    printf("currentPort->dataSize:%d\r\n",currentPort->dataSize);
+    printf("currentPort->offset:%d\r\n",currentPort->offset);
+    printf("currentPort->checksum:%d\r\n",currentPort->checksum);
+    printf("currentPort->cmdMSP:%d\r\n",currentPort->cmdMSP);
+    printf("currentPort->inBuf:%s\r\n",currentPort->inBuf);
 }

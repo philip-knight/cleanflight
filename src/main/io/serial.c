@@ -418,6 +418,9 @@ void evaluateOtherData(serialPort_t *serialPort, uint8_t receivedChar)
     }
 #endif
     if (receivedChar == serialConfig->reboot_character) {
+        //Mine
+        //I don't know why, but if you want to use "R" to reboot system, do it!
+        //Change systemResetToBootloader()to systemReset()
         systemResetToBootloader();
     }
 }
